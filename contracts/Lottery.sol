@@ -46,11 +46,12 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     uint256 currentCount;
     uint256 numberLimited;
     uint256 requestId;
-    bool awarded;
-    bool claimed;
-
+    uint256 awardTime;
+    uint256 claimTime;
   }
+
   mapping(uint256 => LotteryItem) public idToLotteryItem;
+  // mapping(uint256 => ) public 
 
   event LotteryItemCreated (
     uint indexed itemId,
@@ -63,8 +64,8 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     uint256 currentCount,
     uint256 numberLimited,
     uint256 requestId,
-    bool awarded,
-    bool claimed
+    uint256 awardTime,
+    uint256 claimTime
   );
 
   event LotteryItemJoin (
@@ -81,8 +82,8 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     address prizeContract,
     uint256 prizeId,
     address winner,
-    bool awarded,
-    bool claimed
+    uint256 awardTime,
+    uint256 claimTime
   );
 
   constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
@@ -113,8 +114,8 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
       0,
       numberLimited,
       0,
-      false,
-      false
+      0,
+      0
     );
 
     IERC721(prizeContract).transferFrom(msg.sender, address(this), prizeId);
@@ -131,8 +132,8 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
       0,
       numberLimited,
       0,
-      false,
-      false
+      0,
+      0
     );
   }
 
@@ -142,7 +143,7 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
   ) external payable nonReentrant{
     LotteryItem storage lottery = idToLotteryItem[lotteryIndex];
     require(lottery.currentCount + count <= lottery.numberLimited, "Over limit");
-    require(lottery.awarded == false, "This lottery has awarded");
+    require(lottery.awardTime != 0, "This lottery has awarded");
     require(lottery.price * count <= msg.value, "Ether value sent is not correct");
     Ticket(lottery.ticketContract).mint(msg.sender, count);
 
@@ -172,8 +173,8 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
         lottery.prizeContract,
         lottery.prizeId,
         lottery.winner,
-        true,
-        false
+        0,
+        0
       );
     }
   }
@@ -184,7 +185,7 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     LotteryItem storage lottery = idToLotteryItem[lotteryIndex];
     require(lottery.winner == msg.sender, "You are not the winner.");
     IERC721(lottery.prizeContract).transferFrom(address(this), lottery.winner, lottery.prizeId);
-    lottery.claimed = true;
+    lottery.claimTime = block.timestamp;
     emit LotteryItemEnded(
       lottery.itemId,
       lottery.ticketContract,
@@ -192,8 +193,8 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
       lottery.prizeContract,
       lottery.prizeId,
       lottery.winner,
-      true,
-      true
+      lottery.awardTime,
+      block.timestamp
     );
   }
 
@@ -204,6 +205,17 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     for (uint i = 0; i < itemCount; i++) {
       LotteryItem memory currentItem = idToLotteryItem[i];
       items[i] = currentItem;
+    }
+    return items;
+  }
+
+  function fetchLotteryPlayers(uint256 lotteryIndex) public view returns (address[] memory) {
+    LotteryItem memory currentItem = idToLotteryItem[lotteryIndex];
+    uint256 currentCount = currentItem.currentCount;
+    address[] memory items = new address[](currentItem.currentCount);
+    for(uint256 i=0; i<=currentCount; i++){
+      address tickerOwner = Ticket(currentItem.ticketContract).ownerOf(i);
+      items[i] = tickerOwner;
     }
     return items;
   }
@@ -239,7 +251,7 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
         _itemsAwarded.increment();
         lottery.winnerId = winnerId;
         lottery.winner = payable(Ticket(lottery.ticketContract).ownerOf(winnerId));
-        lottery.awarded = true;
+        lottery.awardTime = block.timestamp;
       }
     }
     
