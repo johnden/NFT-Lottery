@@ -143,7 +143,7 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
   ) external payable nonReentrant{
     LotteryItem storage lottery = idToLotteryItem[lotteryIndex];
     require(lottery.currentCount + count <= lottery.numberLimited, "Over limit");
-    require(lottery.awardTime != 0, "This lottery has awarded");
+    require(lottery.awardTime == 0, "This lottery has awarded");
     require(lottery.price * count <= msg.value, "Ether value sent is not correct");
     Ticket(lottery.ticketContract).mint(msg.sender, count);
 
@@ -213,7 +213,7 @@ contract Lottery is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     LotteryItem memory currentItem = idToLotteryItem[lotteryIndex];
     uint256 currentCount = currentItem.currentCount;
     address[] memory items = new address[](currentItem.currentCount);
-    for(uint256 i=0; i<=currentCount; i++){
+    for(uint256 i=0; i < currentCount; i++){
       address tickerOwner = Ticket(currentItem.ticketContract).ownerOf(i);
       items[i] = tickerOwner;
     }
