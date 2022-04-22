@@ -1,3 +1,7 @@
+Prize：0xDbB10778602B1f28919b9032F7fEB37E3FBa7a6d
+Lottery: 0xF09995181fB67C918f1941fA36af8aB17393d740
+Redemption: 0x8B87D2648e7Ff147545340Aa333275D43c2575f4
+
 [![Docs][docs-shield]][docs-url]
 [![NPM][npm-shield]][npm-url]
 [![CI][ci-shield]][ci-url]
