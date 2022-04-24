@@ -1299,9 +1299,10 @@ pragma solidity ^0.8.4;
 
 contract Prize is ERC721A, Ownable {
   constructor() ERC721A("10 BUSD", "10BUSD") {
+      mint(10);
   }
 
-  function mint(uint256 quantity) external payable {
+  function mint(uint256 quantity) public onlyOwner {
     // _safeMint's second argument now takes in a quantity, not a tokenId.
     _safeMint( owner(), quantity);
   }
